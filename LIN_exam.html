@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <script src="https://api.mapbox.com/mapbox-gl-js/v1.9.1/mapbox-gl.js"></script>
+        <link href="https://api.mapbox.com/mapbox-gl-js/v1.9.1/mapbox-gl.css" rel="stylesheet" />
+        <title>CORONA</title>
+        <style>
+            html, body {
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            #container {
+                height: 100%;
+            }
+            #info {
+                height: 25%;
+            }
+            #map {
+                height: 75%;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container">
+            <div id="info">
+                hi
+            </div>
+            <div id="map">
+    
+            </div>
+        </div>
+        <script>
+            mapboxgl.accessToken = 'pk.eyJ1IjoiY3VydGlzbWl0IiwiYSI6ImNrMnl3NzBtNDBjbnQzbW84dGhkZms2cGEifQ.bMHZIArcXiCcY-pSW3h1iQ';
+            const map = new mapboxgl.Map({
+                container: 'map',
+                style: 'mapbox://styles/mapbox/streets-v11',
+                center: [-73.57698440551758, 45.50219620881016],
+                zoom: 14,
+            });
+
+            const url = "map.geojson"
+            map.on('load', function() {
+                map.addSource('points', {
+                    type: 'geojson',
+                    data: url
+                })
+                map.addLayer({
+                    'id': 'points',
+                    'type': 'symbol',
+                    'source': 'points',
+                    'layout': {
+                        // get the icon name from the source's "icon" property
+                        // concatenate the name to get an icon from the style's sprite sheet
+                        'icon-image': ['concat', ['get', 'icon'], '-15'],
+                        // get the title name from the source's "title" property
+                        'text-field': ['get', 'title'],
+                        'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+                        'text-offset': [0, 0.6],
+                        'text-anchor': 'top'
+                    }
+                })
+            });
+        </script>
+    </body>
+</html>
