@@ -1,331 +1,706 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="utf-8" />
-        <script src="https://api.mapbox.com/mapbox-gl-js/v1.9.1/mapbox-gl.js"></script>
-        <link href="https://api.mapbox.com/mapbox-gl-js/v1.9.1/mapbox-gl.css" rel="stylesheet" />
-        <title>CORONA</title>
-        <style>
-            html, body {
-                height: 100%;
-                margin: 0;
-                padding: 0;
-            }
-            #container {
-                height: 100%;
-            }
-            #info {
-                height: 25%;
-            }
-            #map {
-                height: 75%;
-            }
-        </style>
-    </head>
-    <body>
-        <div id="container">
-            <div id="info">
-                hi
-            </div>
+
+<head>
+    <meta charset="utf-8" />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v1.9.1/mapbox-gl.js"></script>
+    <script src="https://code.iconify.design/1/1.0.5/iconify.min.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v1.9.1/mapbox-gl.css" rel="stylesheet" />
+    <title>The Service Locator</title>
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #container {
+            height: 100%;
+            padding-left: 3%;
+            padding-right: 3%;
+        }
+
+        #intro {
+            height: 15%;
+            text-align: center;
+        }
+
+        #info {
+            height: 10%;
+            border-radius: 2%;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            background-color: #f2f2f2;
+            padding: 0.5%;
+        }
+
+        #map-container {
+            height: 65%;
+        }
+
+        #map {
+            height: 100%;
+        }
+
+        .map-overlay {
+            position: absolute;
+            bottom: 20%;
+            right: 9%;
+            background: rgba(200, 255, 255, 0.8);
+            font-family: Arial, sans-serif;
+            border-radius: 10%;
+        }
+
+        #legend {
+            padding: 1%;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            line-height: 10%;
+            height: 10%;
+            margin-bottom: 0%;
+            width: 100px;
+        }
+
+        .legend-key {
+            border-radius: 20%;
+            width: 20%;
+            height: 20%;
+        }
+
+        .legend-item {
+            padding: 1%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <div id="intro">
+            <h1>The Service Locator</h1>
+            <h3>
+                From the COVID-19 Response Team, we present to you the Service Locator!<br>Developed by Curtis Lin, 
+                the Service Locator allows users to find the nearest service from their specified location!
+            </h3>
+        </div>
+        <div id="info">
+            <ul>
+                <li><strong>Service: </strong><span id="service"></span></li>
+                <li><strong>Distance to nearest chosen service in units: </strong><span id="dUnits"></span></li>
+                <li><strong>Distance to nearest chosen service in meters: </strong><span id="dMeters"></span></li>
+            </ul>
+        </div>
+        <div id="map-container">
             <div id="map">
-    
+
+            </div>
+            <div class="map-overlay" id="legend">
+                <div class="legend-item">
+                    <span class="iconify legend-key" data-icon="maki:grocery-15" data-inline="false"></span>
+                    <span>Grocery</span>
+                </div>
+                <div class="legend-item">
+                    <span class="iconify legend-key" data-icon="maki:hospital-15" data-inline="false"></span>
+                    <span>Hospital</span>
+                </div>
+                <div class="legend-item">
+                    <span class="iconify legend-key" data-icon="maki:pharmacy-15" data-inline="false"></span>
+                    <span>Pharmacy</span>
+                </div>
             </div>
         </div>
-        <script>
-            mapboxgl.accessToken = 'pk.eyJ1IjoiY3VydGlzbWl0IiwiYSI6ImNrMnl3NzBtNDBjbnQzbW84dGhkZms2cGEifQ.bMHZIArcXiCcY-pSW3h1iQ';
-            const map = new mapboxgl.Map({
-                container: 'map',
-                style: 'mapbox://styles/mapbox/streets-v11',
-                center: [-73.57698440551758, 45.50219620881016],
-                zoom: 14,
-            });
+    </div>
+    <script>
+        /*
+            Constants are declared at the top,
+            functions are defined after constants,
+            execution of steps at the bottom 
+        */
+        mapboxgl.accessToken = 'pk.eyJ1IjoiY3VydGlzbWl0IiwiYSI6ImNrMnl3NzBtNDBjbnQzbW84dGhkZms2cGEifQ.bMHZIArcXiCcY-pSW3h1iQ';
+        const bounds = [
+            [-73.6391, 45.4733],
+            [-73.5394, 45.5204]
+        ]
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/light-v10',
+            center: [-73.58793840011063, 45.50766528309805],
+            zoom: 11,
+            minZoom: 11,
+            maxBounds: bounds,
+        });
 
-            const url = "map.json"
-            const test = {
-    "type": "FeatureCollection",
-    "features": [
-        {
-            "type": "Feature",
-            "properties": {
-                "Name": "Provigo",
-                "Type": "Grocery",
-                "Address": "3421 Park Ave, Montreal, Quebec H2X 2H6",
-                "Opening Hours": "08:00",
-                "Closing Hours": "20:00"
+        // declaring constants of frequently used strings (services) to prevent mispelling errors
+        const hospital = 'hospital';
+        const grocery = 'grocery';
+        const pharmacy = 'pharmacy';
+
+        // plusing dot to represent user's location
+        const size = 100
+        const pulsingDot = {
+            width: size,
+            height: size,
+            data: new Uint8Array(size * size * 4),
+
+            // get rendering context for the map canvas when layer is added to the map
+            onAdd: function () {
+                let canvas = document.createElement('canvas');
+                canvas.width = this.width;
+                canvas.height = this.height;
+                this.context = canvas.getContext('2d');
             },
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    -73.57177555561066,
-                    45.50875107968296
-                ]
+
+            // called once before every frame where the icon will be used
+            render: function () {
+                let duration = 1000;
+                let t = (performance.now() % duration) / duration;
+
+                let radius = (size / 2) * 0.3;
+                let outerRadius = (size / 2) * 0.7 * t + radius;
+                let context = this.context;
+
+                // draw outer circle
+                context.clearRect(0, 0, this.width, this.height);
+                context.beginPath();
+                context.arc(
+                    this.width / 2,
+                    this.height / 2,
+                    outerRadius,
+                    0,
+                    Math.PI * 2
+                );
+                context.fillStyle = 'rgba(255, 200, 200,' + (1 - t) + ')';
+                context.fill();
+
+                // draw inner circle
+                context.beginPath();
+                context.arc(
+                    this.width / 2,
+                    this.height / 2,
+                    radius,
+                    0,
+                    Math.PI * 2
+                );
+                context.fillStyle = 'rgba(255, 100, 100, 1)';
+                context.strokeStyle = 'white';
+                context.lineWidth = 2 + 4 * (1 - t);
+                context.fill();
+                context.stroke();
+
+                // update this image's data with data from the canvas
+                this.data = context.getImageData(
+                    0,
+                    0,
+                    this.width,
+                    this.height
+                ).data;
+
+                // continuously repaint the map, resulting in the smooth animation of the dot
+                map.triggerRepaint();
+
+                // return `true` to let the map know that the image was updated
+                return true;
             }
-        },
-        {
-            "type": "Feature",
-            "properties": {
-                "Name": "Marché Eden",
-                "Type": "Grocery",
-                "Address": "3575 Park Ave, Montreal, Quebec H2X 3P9",
-                "Opening Hours": "08:00",
-                "Closing Hours": "22:00"
+        };
+
+        // navigation to help user navigate the map
+        const nav = new mapboxgl.NavigationControl();
+
+        // geojson related to grocery
+        const gJson = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "Name": "Provigo",
+                        "Type": "Grocery",
+                        "Address": "3421 Park Ave, Montreal, Quebec H2X 2H6",
+                        "Opening Hours": "08:00",
+                        "Closing Hours": "20:00",
+                        'icon': grocery,
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [
+                            -73.57177555561066,
+                            45.50875107968296
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "Name": "Marché Eden",
+                        "Type": "Grocery",
+                        "Address": "3575 Park Ave, Montreal, Quebec H2X 3P9",
+                        "Opening Hours": "08:00",
+                        "Closing Hours": "22:00",
+                        'icon': grocery,
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [
+                            -73.57503175735474,
+                            45.5103093235521
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "Name": "IGA Louise Ménard - Complexe Desjardins",
+                        "Type": "Grocery",
+                        "Address": "5 Place Desjardins, Montréal, QC H5B 1B5",
+                        "Opening Hours": "08:00",
+                        "Closing Hours": "20:00",
+                        'icon': grocery,
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [
+                            -73.56327295303345,
+                            45.50751046867757
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "Name": "Épicerie Coréenne et Japonaise (한국식품)",
+                        "Type": "Grocery",
+                        "Address": "1829 Saint-Catherine St W, Montreal, Quebec H3H 1M6",
+                        "Opening Hours": "11:00",
+                        "Closing Hours": "18:00",
+                        'icon': grocery,
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [
+                            -73.57998311519623,
+                            45.493453940224285
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "Name": "Marché Lobo",
+                        "Type": "Grocery",
+                        "Address": "3509 Park Ave, Montreal, Quebec H2X 2H8",
+                        "Opening Hours": "09:00",
+                        "Closing Hours": "19:30",
+                        'icon': grocery,
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [
+                            -73.57393205165863,
+                            45.509756706416965
+                        ]
+                    }
+                },
+            ]
+        };
+
+        // geojson related to hospital
+        const hJson = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "Name": "Montréal General Hospital",
+                        "Type": "Hospital",
+                        "Opening Hours": "00:00",
+                        "Closing Hours": "00:00",
+                        "Address": "1650 Cedar Ave, Montreal, Quebec H3G 1A4",
+                        'icon': hospital,
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [
+                            -73.58877539634705,
+                            45.497172860356585
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "Name": "St. Mary's Hospital",
+                        "Type": "Hospital",
+                        "Opening Hours": "00:00",
+                        "Closing Hours": "00:00",
+                        "Address": "3830 Avenue Lacombe, Montréal, QC H3T 1M5",
+                        'icon': hospital,
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [
+                            -73.6239767074585,
+                            45.4947963896697
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "Name": "Sir Mortimer B. Davis Jewish General Hospital",
+                        "Type": "Hospital",
+                        "Opening Hours": "00:00",
+                        "Closing Hours": "00:00",
+                        "Address": "3755 Chemin de la Côte-Sainte-Catherine, Montréal, QC H3T 1E2",
+                        'icon': hospital,
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [
+                            -73.62955570220947,
+                            45.49764663840811
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "Name": "McGill University Health Centre",
+                        "Type": "Hospital",
+                        "Opening Hours": "00:00",
+                        "Closing Hours": "00:00",
+                        "Address": "1001 Decarie Blvd, Montreal, Quebec H4A 3J1",
+                        'icon': hospital,
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [
+                            -73.60073804855347,
+                            45.473727149600904
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "Name": "CHUM",
+                        "Type": "Hospital",
+                        "Opening Hours": "00:00",
+                        "Closing Hours": "00:00",
+                        "Address": "1051 Rue Sanguinet, Montréal, QC H2X 3E4",
+                        'icon': hospital,
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [
+                            -73.55761349201202,
+                            45.51121530317038
+                        ]
+                    }
+                },
+            ]
+        };
+
+        // geojson related to pharmacy
+        const pJson = {
+            "type": "FeatureCollection",
+            "features": [
+            {
+                    "type": "Feature",
+                    "properties": {
+                        "Name": "Jean Coutu",
+                        "Type": "Pharmacy",
+                        "Opening Hours": "10:00",
+                        "Closing Hours": "18:00",
+                        "Address": "980 Saint-Catherine St W, Montreal, Quebec H3B 1E5",
+                        'icon': pharmacy,
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [
+                            -73.57201159000397,
+                            45.50077121762092
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "Name": "PJC Jean Coutu",
+                        "Type": "Pharmacy",
+                        "Opening Hours": "11:00",
+                        "Closing Hours": "15:00",
+                        "Address": "677 Saint-Catherine St W, Montreal, Quebec H3B 5K4",
+                        'icon': pharmacy,
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [
+                            -73.57012331485748,
+                            45.503128637349086
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "Name": "Pharmaprix",
+                        "Type": "Pharmacy",
+                        "Opening Hours": "09:00",
+                        "Closing Hours": "18:00",
+                        "Address": "1120 rue Ste-Catherine O Arr, Montreal, Quebec H3B 1H4",
+                        'icon': pharmacy,
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [
+                            -73.57313007116316,
+                            45.49958307074604
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "Name": "Jean Coutu",
+                        "Type": "Pharmacy",
+                        "Opening Hours": "10:00",
+                        "Closing Hours": "18:00",
+                        "Address": "305 Sherbrooke St W, Montreal, Quebec H2X 1Y1",
+                        'icon': 'pharmacy'
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [
+                            -73.57140004634857,
+                            45.508585666462075
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "Name": "Pharmaprix",
+                        "Type": "Pharmacy",
+                        "Opening Hours": "08:00",
+                        "Closing Hours": "18:00",
+                        "Address": "1 Place Ville Marie Suite 11230, Montreal, Quebec H3B 3Y1",
+                        'icon': pharmacy,
+                    },
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [
+                            -73.56825381517409,
+                            45.501470558173075
+                        ]
+                    }
+                },
+            ]
+        };
+
+        // data structure to better access a service's corresponding data
+        const entries = [
+            {
+                "service": grocery,
+                "data": gJson
             },
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    -73.57503175735474,
-                    45.5103093235521
-                ]
-            }
-        },
-        {
-            "type": "Feature",
-            "properties": {
-                "Name": "IGA Louise Ménard - Complexe Desjardins",
-                "Type": "Grocery",
-                "Address": "5 Place Desjardins, Montréal, QC H5B 1B5",
-                "Opening Hours": "08:00",
-                "Closing Hours": "20:00"
+            {
+                "service": hospital,
+                "data": hJson
             },
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    -73.56327295303345,
-                    45.50751046867757
-                ]
-            }
-        },
-        {
-            "type": "Feature",
-            "properties": {
-                "Name": "Épicerie Coréenne et Japonaise (한국식품)",
-                "Type": "Grocery",
-                "Address": "1829 Saint-Catherine St W, Montreal, Quebec H3H 1M6",
-                "Opening Hours": "11:00",
-                "Closing Hours": "18:00"
+            {
+                "service": pharmacy,
+                "data": pJson
             },
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    -73.57998311519623,
-                    45.493453940224285
-                ]
-            }
-        },
-        {
-            "type": "Feature",
-            "properties": {
-                "Name": "Marché Lobo",
-                "Type": "Grocery",
-                "Address": "3509 Park Ave, Montreal, Quebec H2X 2H8",
-                "Opening Hours": "09:00",
-                "Closing Hours": "19:30"
-            },
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    -73.57393205165863,
-                    45.509756706416965
-                ]
-            }
-        },
-        {
-            "type": "Feature",
-            "properties": {
-                "Name": "Montréal General Hospital",
-                "Type": "Hospital",
-                "Opening Hours": "00:00",
-                "Closing Hours": "00:00",
-                "Address": "1650 Cedar Ave, Montreal, Quebec H3G 1A4"
-            },
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    -73.58877539634705,
-                    45.497172860356585
-                ]
-            }
-        },
-        {
-            "type": "Feature",
-            "properties": {
-                "Name": "St. Mary's Hospital",
-                "Type": "Hospital",
-                "Opening Hours": "00:00",
-                "Closing Hours": "00:00",
-                "Address": "3830 Avenue Lacombe, Montréal, QC H3T 1M5"
-            },
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    -73.6239767074585,
-                    45.4947963896697
-                ]
-            }
-        },
-        {
-            "type": "Feature",
-            "properties": {
-                "Name": "Sir Mortimer B. Davis Jewish General Hospital",
-                "Type": "Hospital",
-                "Opening Hours": "00:00",
-                "Closing Hours": "00:00",
-                "Address": "3755 Chemin de la Côte-Sainte-Catherine, Montréal, QC H3T 1E2"
-            },
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    -73.62955570220947,
-                    45.49764663840811
-                ]
-            }
-        },
-        {
-            "type": "Feature",
-            "properties": {
-                "Name": "McGill University Health Centre",
-                "Type": "Hospital",
-                "Opening Hours": "00:00",
-                "Closing Hours": "00:00",
-                "Address": "1001 Decarie Blvd, Montreal, Quebec H4A 3J1"
-            },
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    -73.60073804855347,
-                    45.473727149600904
-                ]
-            }
-        },
-        {
-            "type": "Feature",
-            "properties": {
-                "Name": "CHUM",
-                "Type": "Hospital",
-                "Opening Hours": "00:00",
-                "Closing Hours": "00:00",
-                "Address": "1051 Rue Sanguinet, Montréal, QC H2X 3E4"
-            },
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    -73.55761349201202,
-                    45.51121530317038
-                ]
-            }
-        },
-        {
-            "type": "Feature",
-            "properties": {
-                "Name": "Jean Coutu",
-                "Type": "Pharmacy",
-                "Opening Hours": "10:00",
-                "Closing Hours": "18:00",
-                "Address": "980 Saint-Catherine St W, Montreal, Quebec H3B 1E5"
-            },
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    -73.57201159000397,
-                    45.50077121762092
-                ]
-            }
-        },
-        {
-            "type": "Feature",
-            "properties": {
-                "Name": "PJC Jean Coutu",
-                "Type": "Pharmacy",
-                "Opening Hours": "11:00",
-                "Closing Hours": "15:00",
-                "Address": "677 Saint-Catherine St W, Montreal, Quebec H3B 5K4"
-            },
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    -73.57012331485748,
-                    45.503128637349086
-                ]
-            }
-        },
-        {
-            "type": "Feature",
-            "properties": {
-                "Name": "Pharmaprix",
-                "Type": "Pharmacy",
-                "Opening Hours": "09:00",
-                "Closing Hours": "18:00",
-                "Address": "1120 rue Ste-Catherine O Arr, Montreal, Quebec H3B 1H4"
-            },
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    -73.57313007116316,
-                    45.49958307074604
-                ]
-            }
-        },
-        {
-            "type": "Feature",
-            "properties": {
-                "Name": "Jean Coutu",
-                "Type": "Pharmacy",
-                "Opening Hours": "10:00",
-                "Closing Hours": "18:00",
-                "Address": "305 Sherbrooke St W, Montreal, Quebec H2X 1Y1"
-            },
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    -73.57140004634857,
-                    45.508585666462075
-                ]
-            }
-        },
-        {
-            "type": "Feature",
-            "properties": {
-                "Name": "Pharmaprix",
-                "Type": "Pharmacy",
-                "Opening Hours": "08:00",
-                "Closing Hours": "18:00",
-                "Address": "1 Place Ville Marie Suite 11230, Montreal, Quebec H3B 3Y1"
-            },
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    -73.56825381517409,
-                    45.501470558173075
-                ]
+        ];
+
+        // initPoints draws all geojson data onto the map when called
+        function initPoints() {
+            for (let i = 0; i < entries.length; i++) {
+                const service = entries[i].service;
+                const data = entries[i].data
+                map.addSource(service, {
+                    type: 'geojson',
+                    data: data
+                })
+                map.addLayer({
+                    'id': service,
+                    'type': 'symbol',
+                    'source': service,
+                    'layout': {
+                        'icon-image': '{icon}-15',
+                        'icon-allow-overlap': true,
+                        'icon-size': 1.5
+                    }
+                })
             }
         }
-    ]
-};
-            map.on('load', function() {
-                map.addSource('points', {
-                    type: 'geojson',
-                    data: url
-                })
-                console.log('a change')
-                map.addLayer({
-                    'id': 'points',
-                    'type': 'circle',
-                    'source': 'points',
-                })
-            });
 
-            function getLocation() {
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(showPosition);
-                } else {
-                    console.log('err')
+        // renderUsr receives the click event e, and renders the user at e's coordinate
+        function renderUsr(e) {
+            if (map.getSource('pulse') == null) {
+                map.addSource('pulse', {
+                    'type': 'geojson',
+                    'data': {
+                        'type': 'FeatureCollection',
+                        'features': [
+                            {
+                                'type': 'Feature',
+                                'geometry': {
+                                    'type': 'Point',
+                                    'coordinates': [e.lngLat.lng, e.lngLat.lat]
+                                }
+                            }
+                        ]
+                    }
+                });
+                map.addLayer({
+                    'id': 'pulse',
+                    'type': 'symbol',
+                    'source': 'pulse',
+                    'layout': {
+                        'icon-image': 'pulsing-dot'
+                    }
+                })
+            } else {
+                map.getSource('pulse').setData({
+                    'type': 'FeatureCollection',
+                    'features': [
+                        {
+                            'type': 'Feature',
+                            'geometry': {
+                                'type': 'Point',
+                                'coordinates': [e.lngLat.lng, e.lngLat.lat]
+                            }
+                        }
+                    ]
+                });
+            }
+        }
+     
+        /*
+            promptService recursively prompts the user to answer one of the 3 specified services,
+            returns null if chooses not to answer,
+            returns specified service if answers correctly,
+            returns result of a recursive call to promptService if answer is not valid
+        */
+        function promptService() {
+            const answer = prompt("Please enter one of the three services: Hospital, Grocery, Pharmacy");
+            if (answer == null) {
+                alert("You have chosen not to enter the desired service.\nClick on the map again to indicate your location if you wish to choose a service again.");
+                return null;
+            } else if (answer.toLowerCase().indexOf(hospital) !== -1) {
+                return hospital;
+            } else if (answer.toLowerCase().indexOf(grocery) !== -1) {
+                return grocery;
+            } else if (answer.toLowerCase().indexOf(pharmacy) !== -1) {
+                return pharmacy;
+            } else {
+                alert("Please make sure that your answer is spelled exactly like one of the three following words.\nhospital, grocery, pharmacy.");
+                return promptService()
+            }
+        }
+
+        // euclid receives two sets of x, y coordinates and returns the euclidean distance between them
+        function euclid(usrX, usrY, feaX, feaY) {
+            let x = feaX - usrX;
+            let y = feaY - usrY;
+            return Math.sqrt(x*x + y*y);
+        }
+
+        // nearestSer receives a string service and a click event e and returns properties of the nearest service requested
+        function nearestSer(service, e) {
+            const usrX = e.point.x;
+            const usrY = e.point.y;
+            const usrLngLat = e.lngLat;
+            let nearest = {
+                minUDis: Number.MAX_SAFE_INTEGER,
+                minMDis: Number.MAX_SAFE_INTEGER,
+                feature: null
+            }
+            for (let i = 0; i < entries.length; i++) {
+                if (entries[i].service === service) {
+                    const features = map.queryRenderedFeatures({
+                        layers: [service]
+                    });
+
+                    for (let j = 0; j < features.length; j++) {
+                        const coords = features[j].geometry.coordinates;
+                        const point = map.project(coords);
+                        let dis = euclid(usrX, usrY, point.x, point.y);
+                        if (dis <= nearest.minUDis) {
+                            nearest.minUDis = dis;
+                            nearest.minMDis = usrLngLat.distanceTo(new mapboxgl.LngLat(coords[0], coords[1]));
+                            nearest.feature = features[j];
+                        }
+                    }
                 }
             }
 
-            function showPosition(position) {
-                x.innerHTML = "Latitude: " + position.coords.latitude +
-  "<br>Longitude: " + position.coords.longitude;
-            }
-        </script>
-    </body>
+            return nearest;
+        }
+
+        // attachPopup receives nearest service, and attaches a popup with the service's information onto the map
+        function attachPopup(nearest) {
+            const properties = nearest.feature.properties;
+            const popup = new mapboxgl.Popup()
+            .setLngLat(nearest.feature.geometry.coordinates)
+            .setHTML(`
+                <ul>
+                    <li><strong>Name: </strong>${properties.Name}</li>
+                    <li><strong>Service: </strong>${properties.Type}</li>
+                    <li><strong>Address: </strong>${properties.Address}</li>
+                    <li><strong>Opening hrs: </strong>${properties["Opening Hours"]}</li>
+                    <li><strong>Closing hrs: </strong>${properties["Closing Hours"]}</li>
+                    <li><strong>Distance in units: </strong>${nearest.minUDis}</li>
+                    <li><strong>Distance in meters: </strong>${nearest.minMDis}</li>
+                </ul>
+            `)
+            .addTo(map);
+        }
+
+        /*
+            displayDistance receives nearest service's properties and the user's long lat,
+            updates html elements: service requested, distance in units and in meters 
+        */
+        function displayDistance(nearest, lngLat) {
+            const dUnits = nearest.minUDis;
+            const dMeters = nearest.minMDis;
+            const service = nearest.feature.layer.id;
+
+            document.getElementById('service').innerHTML = service;
+            document.getElementById('dUnits').innerHTML = dUnits;
+            document.getElementById('dMeters').innerHTML = dMeters;
+
+        }
+
+
+        // anonymous function called when load event is fired from map
+        map.on('load', function () {
+            // adds geojson data
+            initPoints();
+            // adding pulsingDot img for future rendering of user
+            map.addImage('pulsing-dot', pulsingDot, { pixelRatio: 2 });
+            // adding navigation controls for better user experience
+            map.addControl(nav, 'top-left');
+
+            alert("Please click on the map to indicate where you are.");
+
+            // anonymous function called when click event is fired from map
+            map.on('click', function(e) {
+                // renders user on the map
+                renderUsr(e);
+                // prompt user for service
+                const service = promptService();
+                // if user answered with a valid service
+                if (service !== null) {
+                    // locate nearest service
+                    const nearest = nearestSer(service, e);
+                    // attach popup to nearest service
+                    attachPopup(nearest);
+                    // update data of corresponding html elements
+                    displayDistance(nearest, e.lngLat);
+                }
+            });
+        });
+    </script>
+</body>
+
 </html>
