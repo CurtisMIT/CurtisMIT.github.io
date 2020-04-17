@@ -685,22 +685,19 @@
 
             // anonymous function called when click event is fired from map
             map.on('click', function(e) {
-                // // renders user on the map
-                // renderUsr(e);
-                // // prompt user for service
-                // const service = promptService();
-                // // if user answered with a valid service
-                // if (service !== null) {
-                //     // locate nearest service
-                //     const nearest = nearestSer(service, e);
-                //     // attach popup to nearest service
-                //     attachPopup(nearest);
-                //     // update data of corresponding html elements
-                //     displayDistance(nearest, e.lngLat);
-                // }
-                console.log(map.getBounds())
-                console.log(map.getCenter())
-                console.log(map.getZoom())
+                // renders user on the map
+                renderUsr(e);
+                // prompt user for service
+                const service = promptService();
+                // if user answered with a valid service
+                if (service !== null) {
+                    // locate nearest service
+                    const nearest = nearestSer(service, e);
+                    // attach popup to nearest service
+                    attachPopup(nearest);
+                    // update data of corresponding html elements
+                    displayDistance(nearest, e.lngLat);
+                }
             });
         });
     </script>
