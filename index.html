@@ -116,15 +116,15 @@
         */
         mapboxgl.accessToken = 'pk.eyJ1IjoiY3VydGlzbWl0IiwiYSI6ImNrMnl3NzBtNDBjbnQzbW84dGhkZms2cGEifQ.bMHZIArcXiCcY-pSW3h1iQ';
         const bounds = [
-            [-73.6391, 45.4733],
-            [-73.5394, 45.5204]
+            [-73.66546360970935, 45.469069896655554],
+            [-73.5284988161328, 45.515421050973]
         ]
         const map = new mapboxgl.Map({
             container: 'map',
             style: 'mapbox://styles/mapbox/light-v10',
-            center: [-73.58793840011063, 45.50766528309805],
-            zoom: 11,
-            minZoom: 11,
+            center: [-73.59698121291933, 45.49225024219828],
+            zoom: 12.262351205663327,
+            minZoom: 12.262351205663327,
             maxBounds: bounds,
         });
 
@@ -685,19 +685,22 @@
 
             // anonymous function called when click event is fired from map
             map.on('click', function(e) {
-                // renders user on the map
-                renderUsr(e);
-                // prompt user for service
-                const service = promptService();
-                // if user answered with a valid service
-                if (service !== null) {
-                    // locate nearest service
-                    const nearest = nearestSer(service, e);
-                    // attach popup to nearest service
-                    attachPopup(nearest);
-                    // update data of corresponding html elements
-                    displayDistance(nearest, e.lngLat);
-                }
+                // // renders user on the map
+                // renderUsr(e);
+                // // prompt user for service
+                // const service = promptService();
+                // // if user answered with a valid service
+                // if (service !== null) {
+                //     // locate nearest service
+                //     const nearest = nearestSer(service, e);
+                //     // attach popup to nearest service
+                //     attachPopup(nearest);
+                //     // update data of corresponding html elements
+                //     displayDistance(nearest, e.lngLat);
+                // }
+                console.log(map.getBounds())
+                console.log(map.getCenter())
+                console.log(map.getZoom())
             });
         });
     </script>
